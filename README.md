@@ -7,7 +7,7 @@ NASA Jet Propulsion Laboratory 329G
 
 Joshua B. Fisher (he/him)<br>
 [jbfisher@chapman.edu](mailto:jbfisher@chapman.edu)<br>
-Concept development and project management<br>
+Algorithm inventor<br>
 Chapman University
 
 Claire Villanueva-Weeks (she/her)<br>
