@@ -1,7 +1,7 @@
 from typing import Union
 import numpy as np
-import raster as rt
-from raster import Raster
+import rasters as rt
+from rasters import Raster
 
 # gas constant for dry air in joules per kilogram per kelvin
 RD = 286.9

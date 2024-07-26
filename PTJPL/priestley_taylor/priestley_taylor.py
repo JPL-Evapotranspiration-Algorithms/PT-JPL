@@ -1,7 +1,7 @@
 from typing import Union
 import numpy as np
 
-from raster import Raster
+from rasters import Raster
 
 # psychrometric constant gamma in kiloPascal per degree Celsius
 # same as value for ventilated (Asmann type) psychrometers, with an air movement of some 5 m/s
