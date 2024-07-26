@@ -16,22 +16,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pandas",
-    "pillow",
-    "geopandas",
-    "h5py",
-    "matplotlib",
     "numpy",
     "pandas",
-    "pygeos",
-    "pyproj",
-    "rasterio",
-    "shapely",
-    "scikit-image",  # Corrected package name
-    "affine",
-    "astropy",
-    "pyresample",
-    "scipy",
-    "six",
+    "rasters"
 ]
 requires-python = ">=3.11"
