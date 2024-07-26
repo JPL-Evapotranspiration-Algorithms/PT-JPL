@@ -9,34 +9,15 @@ readme = "README.md"
 authors = [
     { name = "Gregory Halverson", email = "gregory.h.halverson@jpl.nasa.gov" },
     { name = "Joshua B. Fisher", email = "jbfisher@chapman.edu" },
-    { name = "Claire S. Villanueva-Weeks, email = "claire.s.villanueva-weeks@jpl.gov" }
+    { name = "Claire S. Villanueva-Weeks", email = "claire.s.villanueva-weeks@jpl.gov" }
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pandas",
-    "pillow",
-    "geopandas",
-    "h5py",
-    "matplotlib",
     "numpy",
     "pandas",
-    "pygeos",
-    "pyproj",
-    "rasterio",
-    "shapely",
-    "scikit-image",  # Corrected package name
-    "affine",
-    "astropy",
-    "pyresample",
-    "scipy",
-    "six",
+    "rasters"
 ]
-requires-python = ">=3.10"
-
-[project.optional-dependencies]
-macos = [
-    "pykdtree @ git+https://github.com/storpipfugl/pykdtree.git",
-]
+requires-python = ">=3.11"

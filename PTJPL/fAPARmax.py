@@ -1,7 +1,7 @@
 from os.path import join, abspath, dirname
 import numpy as np
-import raster as rt
-from raster import Raster, RasterGeometry
+import rasters as rt
+from rasters import Raster, RasterGeometry
 
 def load_fAPARmax(geometry: RasterGeometry) -> Raster:
     SCALE_FACTOR = 0.0001
