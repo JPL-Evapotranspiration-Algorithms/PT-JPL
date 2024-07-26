@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .raster import Raster
+from rasters import Raster
 
 from .meteorology_conversion.meteorology_conversion import SVP_Pa_from_Ta_C, SVP_kPa_from_Ta_C
 from .priestley_taylor.priestley_taylor import GAMMA_KPA, GAMMA_PA, delta_Pa_from_Ta_C, delta_kPa_from_Ta_C
