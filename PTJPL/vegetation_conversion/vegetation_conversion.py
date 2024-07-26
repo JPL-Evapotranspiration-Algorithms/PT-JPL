@@ -45,3 +45,27 @@ def LAI_from_NDVI(
     LAI = rt.clip(-np.log(1 - fIPAR) * (1 / KPAR), min_LAI, max_LAI)
 
     return LAI
+
+def SAVI_from_NDVI(NDVI: Union[Raster, np.ndarray]) -> Union[Raster, np.ndarray]:
+    """
+    Linearly calculates Soil-Adjusted Vegetation Index from ST_K.
+    :param NDVI: normalized difference vegetation index clipped between 0 and 1
+    :return: soil-adjusted vegetation index
+    """
+    return NDVI * 0.45 + 0.132
+
+def fAPAR_from_SAVI(SAVI: Union[Raster, np.ndarray]) -> Union[Raster, np.ndarray]:
+    """
+    Linearly calculates fraction of absorbed photosynthetically active radiation from soil-adjusted vegetation index.
+    :param SAVI: soil adjusted vegetation index
+    :return: fraction of absorbed photosynthetically active radiation
+    """
+    return rt.clip(SAVI * 1.3632 + -0.048, 0, 1)
+
+def fIPAR_from_NDVI(NDVI: Union[Raster, np.ndarray]) -> Union[Raster, np.ndarray]:
+    """
+    Calculate fraction of intercepted photosynthetically active radiation from normalized difference vegetation index
+    :param NDVI: normalized difference vegetation index
+    :return: fraction of intercepted photosynthetically active radiation
+    """
+    return rt.clip(rt.clip(NDVI, 0, 1) - 0.05, 0, 1)
