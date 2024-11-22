@@ -1,7 +1,7 @@
 from typing import Union
 import numpy as np
-import raster as rt
-from raster import Raster
+import rasters as rt
+from rasters import Raster
 
 KPAR = 0.5
 MIN_FIPAR = 0.0
