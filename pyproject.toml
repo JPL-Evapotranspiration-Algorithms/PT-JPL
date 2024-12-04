@@ -26,7 +26,7 @@ dependencies = [
 requires-python = ">=3.11"
 
 [tool.setuptools.package-data]
-PTJPL = ["*.txt", "*.tif]
+PTJPL = ["*.txt", "*.tif"]
 
 [project.urls]
 "Homepage" = "https://github.com/JPL-Evapotranspiration-Algorithms/PTJPL"
