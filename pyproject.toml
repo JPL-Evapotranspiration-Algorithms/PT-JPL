@@ -21,7 +21,8 @@ dependencies = [
     "geos5fp",
     "numpy",
     "pandas",
-    "rasters"
+    "rasters",
+    "scikit-learn"
 ]
 requires-python = ">=3.11"
 

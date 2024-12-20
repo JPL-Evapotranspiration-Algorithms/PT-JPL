@@ -35,7 +35,7 @@ from .partitioning import calculate_interception
 from .fAPARmax import load_fAPARmax
 from .Topt import load_Topt
 
-from .net_radiation.verma_net_radiation import process_verma_net_radiation
+from .net_radiation.verma_net_radiation import process_verma_net_radiation, daily_Rn_integration_verma
 from .soil_heat_flux.calculate_SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
 
