@@ -51,7 +51,7 @@ def PTJPL(
         G: Union[Raster, np.ndarray] = None,
         Topt: Union[Raster, np.ndarray] = None,
         fAPARmax: Union[Raster, np.ndarray] = None,
-        geometry: Raster = None,
+        geometry: RasterGeometry = None,
         datetime_UTC: datetime = None,
         GEOS5FP_connection: GEOS5FP = None,
         resampling: str = "nearest",
