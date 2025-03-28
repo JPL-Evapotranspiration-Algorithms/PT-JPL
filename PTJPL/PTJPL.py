@@ -7,7 +7,7 @@ from datetime import datetime
 import rasters as rt
 from rasters import Raster, RasterGeometry
 
-from geos5fp import GEOS5FP
+from GEOS5FP import GEOS5FP
 
 from .constants import *
 
