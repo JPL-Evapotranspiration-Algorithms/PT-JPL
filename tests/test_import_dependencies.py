@@ -8,7 +8,6 @@ dependencies = [
     "numpy",
     "pandas",
     "rasters",
-    "sklearn",
     "verma_net_radiation"
 ]
 
