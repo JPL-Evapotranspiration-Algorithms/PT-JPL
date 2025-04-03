@@ -53,7 +53,7 @@ def PTJPL(
         Topt: Union[Raster, np.ndarray] = None,
         fAPARmax: Union[Raster, np.ndarray] = None,
         geometry: RasterGeometry = None,
-        datetime_UTC: datetime = None,
+        time_UTC: datetime = None,
         GEOS5FP_connection: GEOS5FP = None,
         resampling: str = "nearest",
         delta_Pa: Union[Raster, np.ndarray, float] = None,
@@ -77,9 +77,9 @@ def PTJPL(
     if GEOS5FP_connection is None:
         GEOS5FP_connection = GEOS5FP()
 
-    if Ta_C is None and geometry is not None and datetime_UTC is not None:
+    if Ta_C is None and geometry is not None and time_UTC is not None:
         Ta_C = GEOS5FP_connection.Ta_C(
-            time_UTC=datetime_UTC,
+            time_UTC=time_UTC,
             geometry=geometry,
             resampling=resampling
         )
@@ -87,9 +87,9 @@ def PTJPL(
     if Ta_C is None:
         raise ValueError("air temperature (Ta_C) not given")
     
-    if RH is None and geometry is not None and datetime_UTC is not None:
+    if RH is None and geometry is not None and time_UTC is not None:
         RH = GEOS5FP_connection.RH(
-            time_UTC=datetime_UTC,
+            time_UTC=time_UTC,
             geometry=geometry,
             resampling=resampling
         )
@@ -98,9 +98,9 @@ def PTJPL(
         raise ValueError("relative humidity (RH) not given")
 
     if Rn is None and albedo is not None and ST_C is not None and emissivity is not None:
-        if SWin is None and geometry is not None and datetime_UTC is not None:
+        if SWin is None and geometry is not None and time_UTC is not None:
             SWin = GEOS5FP_connection.SWin(
-                time_UTC=datetime_UTC,
+                time_UTC=time_UTC,
                 geometry=geometry,
                 resampling=resampling
             )
