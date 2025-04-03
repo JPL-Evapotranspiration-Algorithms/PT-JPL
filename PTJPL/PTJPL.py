@@ -10,6 +10,7 @@ from rasters import Raster, RasterGeometry
 from GEOS5FP import GEOS5FP
 
 from verma_net_radiation import process_verma_net_radiation, daily_Rn_integration_verma
+from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
 from .constants import *
 
@@ -36,9 +37,6 @@ from .partitioning import calculate_interception
 
 from .fAPARmax import load_fAPARmax
 from .Topt import load_Topt
-
-from .soil_heat_flux.calculate_SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
-
 
 def PTJPL(
         NDVI: Union[Raster, np.ndarray],
