@@ -20,11 +20,9 @@ dependencies = [
     "ECOv002-granules>=1.0.3",
     "ECOv003-granules",
     "GEOS5FP>=1.1.1",
-    "h5py>=3.13.0",
     "numpy",
     "pandas",
     "rasters>=1.4.6",
-    "scikit-learn",
     "SEBAL-soil-heat-flux",
     "verma-net-radiation"
 ]
