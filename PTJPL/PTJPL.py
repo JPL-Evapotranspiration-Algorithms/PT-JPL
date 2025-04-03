@@ -9,6 +9,8 @@ from rasters import Raster, RasterGeometry
 
 from GEOS5FP import GEOS5FP
 
+from verma_net_radiation import process_verma_net_radiation, daily_Rn_integration_verma
+
 from .constants import *
 
 from .meteorology_conversion import SVP_Pa_from_Ta_C
@@ -35,7 +37,6 @@ from .partitioning import calculate_interception
 from .fAPARmax import load_fAPARmax
 from .Topt import load_Topt
 
-from .net_radiation.verma_net_radiation import process_verma_net_radiation, daily_Rn_integration_verma
 from .soil_heat_flux.calculate_SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
 
@@ -195,7 +196,7 @@ def PTJPL(
 
     # soil evaporation
 
-    # caluclate net radiation of the soil from leaf area index
+    # calculate net radiation of the soil from leaf area index
     Rn_soil = calculate_soil_net_radiation(Rn, LAI)
     results["Rn_soil"] = Rn_soil
 

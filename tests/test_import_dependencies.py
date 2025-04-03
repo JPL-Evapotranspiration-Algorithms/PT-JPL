@@ -8,7 +8,8 @@ dependencies = [
     "numpy",
     "pandas",
     "rasters",
-    "sklearn"
+    "sklearn",
+    "verma_net_radiation"
 ]
 
 # Generate individual test functions for each dependency
