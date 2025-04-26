@@ -20,12 +20,14 @@ dependencies = [
     "ECOv002-granules>=1.0.3",
     "ECOv003-granules",
     "GEOS5FP>=1.1.1",
+    "monte-carlo-sensitivity",
     "numpy",
     "pandas",
     "rasters>=1.4.6",
+    "seaborn",
     "SEBAL-soil-heat-flux",
     "solar-apparent-time",
-    "verma-net-radiation"
+    "verma-net-radiation>=1.1.0"
 ]
 requires-python = ">=3.10"
 
