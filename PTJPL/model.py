@@ -1,3 +1,26 @@
+"""
+PT-JPL Model Implementation
+
+This module provides the implementation of the PT-JPL (Priestley-Taylor Jet Propulsion Laboratory) model
+for estimating evapotranspiration and its components using remote sensing and meteorological data.
+
+The main function, PTJPL, computes instantaneous latent heat fluxes (evapotranspiration) and its partitioning
+into soil evaporation, canopy transpiration, and interception evaporation, based on a variety of input parameters
+including NDVI, surface temperature, albedo, net radiation, air temperature, relative humidity, and more.
+
+Dependencies:
+    - numpy
+    - pandas
+    - rasters
+    - GEOS5FP
+    - verma_net_radiation
+    - SEBAL_soil_heat_flux
+    - PTJPL internal modules (constants, meteorology_conversion, priestley_taylor, vegetation_conversion, partitioning, fAPARmax, Topt)
+
+Returns:
+    Dictionary containing arrays for each calculated component (e.g., LE, LE_soil, LE_canopy, LE_interception, PET, etc.)
+"""
+
 from typing import Union, Dict
 import warnings
 import numpy as np
@@ -61,20 +84,62 @@ def PTJPL(
         PT_alpha: float = PT_ALPHA,
         minimum_Topt: float = MINIMUM_TOPT,
         floor_Topt: bool = FLOOR_TOPT) -> Dict[str, np.ndarray]:
+    """
+    Compute PT-JPL evapotranspiration and its components.
+
+    Parameters:
+        NDVI: Normalized Difference Vegetation Index (array or Raster)
+        ST_C: Surface temperature in Celsius (array or Raster)
+        emissivity: Surface emissivity (array or Raster)
+        albedo: Surface albedo (array or Raster)
+        Rn: Net radiation (array or Raster)
+        Ta_C: Air temperature in Celsius (array or Raster)
+        RH: Relative humidity (array or Raster, 0-1)
+        SWin: Incoming shortwave radiation (array or Raster)
+        G: Soil heat flux (array or Raster)
+        Topt: Optimum temperature for photosynthesis (array or Raster)
+        fAPARmax: Maximum fraction of absorbed PAR (array or Raster)
+        geometry: RasterGeometry object (optional)
+        time_UTC: Datetime object for meteorological data (optional)
+        GEOS5FP_connection: GEOS5FP object for meteorological data (optional)
+        resampling: Resampling method for meteorological data (default "nearest")
+        delta_Pa: Slope of saturation vapor pressure curve (optional)
+        gamma_Pa: Psychrometric constant (default from constants)
+        epsilon: Ratio delta/(delta+gamma) (optional)
+        beta_Pa: Soil moisture constraint parameter (default from constants)
+        PT_alpha: Priestley-Taylor coefficient (default from constants)
+        minimum_Topt: Minimum allowed Topt (default from constants)
+        floor_Topt: Whether to floor Topt to Ta_C if Ta_C > Topt (default from constants)
+
+    Returns:
+        Dictionary with keys:
+            - "Rn_soil": Net radiation to soil
+            - "LE_soil": Soil evaporation
+            - "Rn_canopy": Net radiation to canopy
+            - "PET": Potential evapotranspiration
+            - "LE_canopy": Canopy transpiration
+            - "LE_interception": Interception evaporation
+            - "LE": Total latent heat flux (evapotranspiration)
+    """
     results = {}
 
+    # If geometry is not provided, try to infer from NDVI Raster
     if geometry is None and isinstance(NDVI, Raster):
         geometry = NDVI.geometry
 
+    # Load Topt if not provided and geometry is available
     if Topt is None and geometry is not None:
         Topt = load_Topt(geometry)
 
+    # Load fAPARmax if not provided and geometry is available
     if fAPARmax is None and geometry is not None:
         fAPARmax = load_fAPARmax(geometry)
 
+    # Create GEOS5FP connection if not provided
     if GEOS5FP_connection is None:
         GEOS5FP_connection = GEOS5FP()
 
+    # Retrieve air temperature if not provided, using GEOS5FP and geometry/time
     if Ta_C is None and geometry is not None and time_UTC is not None:
         Ta_C = GEOS5FP_connection.Ta_C(
             time_UTC=time_UTC,
@@ -85,6 +150,7 @@ def PTJPL(
     if Ta_C is None:
         raise ValueError("air temperature (Ta_C) not given")
     
+    # Retrieve relative humidity if not provided, using GEOS5FP and geometry/time
     if RH is None and geometry is not None and time_UTC is not None:
         RH = GEOS5FP_connection.RH(
             time_UTC=time_UTC,
@@ -95,7 +161,9 @@ def PTJPL(
     if RH is None:
         raise ValueError("relative humidity (RH) not given")
 
+    # Compute net radiation if not provided, using albedo, ST_C, and emissivity
     if Rn is None and albedo is not None and ST_C is not None and emissivity is not None:
+        # Retrieve incoming shortwave if not provided
         if SWin is None and geometry is not None and time_UTC is not None:
             SWin = GEOS5FP_connection.SWin(
                 time_UTC=time_UTC,
@@ -103,6 +171,7 @@ def PTJPL(
                 resampling=resampling
             )
 
+        # Calculate net radiation using Verma et al. method
         Rn_results = process_verma_net_radiation(
             SWin=SWin,
             albedo=albedo,
@@ -117,6 +186,7 @@ def PTJPL(
     if Rn is None:
         raise ValueError("net radiation (Rn) not given")
 
+    # Compute soil heat flux if not provided, using SEBAL method
     if G is None and Rn is not None and ST_C is not None and NDVI is not None and albedo is not None:
         G = calculate_SEBAL_soil_heat_flux(
             Rn=Rn,
@@ -128,95 +198,93 @@ def PTJPL(
     if G is None:
         raise ValueError("soil heat flux (G) not given")
 
-    # calculate meteorology
+    # --- Meteorological calculations ---
 
-    # calculate saturation vapor pressure in kPa from air temperature in celsius
-    # floor saturation vapor pressure at 1
+    # Calculate saturation vapor pressure (Pa) from air temperature (C)
     SVP_Pa = SVP_Pa_from_Ta_C(Ta_C)
 
-    # constrain relative humidity between 0 and 1
+    # Constrain relative humidity between 0 and 1
     RH = rt.clip(RH, 0, 1)
 
-    # calculate water vapor pressure in Pascals from relative humidity and saturation vapor pressure
+    # Calculate actual vapor pressure (Pa)
     Ea_Pa = RH * SVP_Pa
 
-    # calculate vapor pressure deficit from water vapor pressure
+    # Calculate vapor pressure deficit (Pa), floor at 0
     VPD_Pa = rt.clip(SVP_Pa - Ea_Pa, 0, None)
 
-    # calculate relative surface wetness from relative humidity
+    # Calculate relative surface wetness from RH
     fwet = calculate_relative_surface_wetness(RH)
 
-    # calculate vegetation values
+    # --- Vegetation calculations ---
 
-    # convert normalized difference vegetation index to soil-adjusted vegetation index
+    # Convert NDVI to Soil-Adjusted Vegetation Index (SAVI)
     SAVI = SAVI_from_NDVI(NDVI)
 
-    # calculate fraction of absorbed photosynthetically active radiation from soil-adjusted vegetation index
+    # Calculate fraction of absorbed PAR (fAPAR) from SAVI
     fAPAR = fAPAR_from_SAVI(SAVI)
 
-    # calculate fIPAR from NDVI
+    # Calculate fraction of intercepted PAR (fIPAR) from NDVI
     fIPAR = fIPAR_from_NDVI(NDVI)
 
-    # replace zero fIPAR with NaN
+    # Replace zero fIPAR with NaN to avoid division by zero
     fIPAR = np.where(fIPAR == 0, np.nan, fIPAR)
 
-    # calculate green canopy fraction (fg) from fAPAR and fIPAR, constrained between zero and one
+    # Calculate green canopy fraction (fg), constrained between 0 and 1
     fg = calculate_green_canopy_fraction(fAPAR, fIPAR)
 
-    # calculate plant moisture constraint (fM) from fraction of photosynthetically active radiation, constrained between zero and one
+    # Calculate plant moisture constraint (fM), constrained between 0 and 1
     fM = calculate_plant_moisture_constraint(fAPAR, fAPARmax)
 
-    # calculate soil moisture constraint from mean relative humidity and vapor pressure deficit, constrained between zero and one
+    # Calculate soil moisture constraint (fSM), constrained between 0 and 1
     fSM = calculate_soil_moisture_constraint(RH, VPD_Pa, beta_Pa=beta_Pa)
 
-    # apply corrections to optimum temperature
+    # --- Optimum temperature corrections ---
 
     if floor_Topt:
-        # when Topt exceeds observed air temperature, then set Topt to match air temperature
+        # If Topt exceeds observed air temperature, set Topt to Ta_C
         Topt = rt.where(Ta_C > Topt, Ta_C, Topt)
 
+    # Enforce minimum Topt
     Topt = rt.clip(Topt, minimum_Topt, None)
 
-    # calculate plant temperature constraint (fT) from optimal phenology
+    # Calculate plant temperature constraint (fT) from Ta_C and Topt
     fT = calculate_plant_temperature_constraint(Ta_C, Topt)
 
+    # Calculate Leaf Area Index (LAI) from NDVI
     LAI = LAI_from_NDVI(NDVI)
 
-    # calculate delta / (delta + gamma) term if it's not given
+    # --- Priestley-Taylor epsilon calculation ---
+
     if epsilon is None:
-        # calculate delta if it's not given
+        # Calculate delta if not provided
         if delta_Pa is None:
-            # calculate slope of saturation to vapor pressure curve in kiloPascal per degree Celsius
+            # Slope of saturation vapor pressure curve (Pa/C)
             delta_Pa = delta_Pa_from_Ta_C(Ta_C)
 
-        # calculate delta / (delta + gamma)
+        # Calculate epsilon = delta / (delta + gamma)
         epsilon = delta_Pa / (delta_Pa + gamma_Pa)
 
-    # soil evaporation
+    # --- Soil evaporation ---
 
-    # calculate net radiation of the soil from leaf area index
+    # Calculate net radiation to soil from LAI
     Rn_soil = calculate_soil_net_radiation(Rn, LAI)
     results["Rn_soil"] = Rn_soil
 
-    # calculate soil evaporation (LEs) from relative surface wetness, soil moisture constraint,
-    # priestley taylor coefficient, epsilon = delta / (delta + gamma), net radiation of the soil,
-    # and soil heat flux
+    # Calculate soil evaporation (LE_soil)
     LE_soil = calculate_soil_latent_heat_flux(Rn_soil, G, epsilon, fwet, fSM, PT_alpha)
     results["LE_soil"] = LE_soil
 
-    # canopy transpiration
+    # --- Canopy transpiration ---
 
-    # calculate net radiation of the canopy from net radiation of the soil
+    # Net radiation to canopy is total minus soil
     Rn_canopy = Rn - Rn_soil
     results["Rn_canopy"] = Rn_canopy
 
-    # calculate potential evapotranspiration (pET) from net radiation, and soil heat flux
+    # Calculate potential evapotranspiration (PET)
     PET = PT_alpha * epsilon * (Rn - G)
     results["PET"] = PET
 
-    # calculate canopy transpiration (LEc) from priestley taylor, relative surface wetness,
-    # green canopy fraction, plant temperature constraint, plant moisture constraint,
-    # epsilon = delta / (delta + gamma), and net radiation of the canopy
+    # Calculate canopy transpiration (LE_canopy)
     LE_canopy = calculate_canopy_latent_heat_flux(
         Rn_canopy=Rn_canopy,
         epsilon=epsilon,
@@ -226,28 +294,25 @@ def PTJPL(
         fM=fM,
         PT_alpha=PT_alpha
     )
-
     results["LE_canopy"] = LE_canopy
 
-    # interception evaporation
+    # --- Interception evaporation ---
 
-    # calculate interception evaporation (LEi) from relative surface wetness and net radiation of the canopy
+    # Calculate interception evaporation (LE_interception)
     LE_interception = calculate_interception(
         Rn_canopy=Rn_canopy,
         epsilon=epsilon,
         fwet=fwet,
         PT_alpha=PT_alpha
     )
-
     results["LE_interception"] = LE_interception
 
-    # combined evapotranspiration
+    # --- Combined evapotranspiration ---
 
-    # combine soil evaporation (LEs), canopy transpiration (LEc), and interception evaporation (LEi)
-    # into instantaneous evapotranspiration (LE)
+    # Total latent heat flux (LE) is sum of soil, canopy, and interception
     LE = LE_soil + LE_canopy + LE_interception
 
-    # constrain instantaneous evapotranspiration between zero and potential evapotranspiration
+    # Constrain LE between 0 and PET
     LE = np.clip(LE, 0, PET)
     results["LE"] = LE
 
