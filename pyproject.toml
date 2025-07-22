@@ -20,7 +20,7 @@ dependencies = [
     "ECOv002-CMR>=1.0.5",
     "ECOv002-granules>=1.0.3",
     "ECOv003-granules",
-    "GEOS5FP>=1.1.1",
+    "GEOS5FP>=1.2.2",
     "monte-carlo-sensitivity",
     "numpy",
     "pandas",
