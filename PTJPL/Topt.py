@@ -40,4 +40,4 @@ def load_Topt(geometry: Union[RasterGeometry, MultiPoint]) -> Union[Raster, np.n
     if isinstance(result, Raster):
         result.nodata = np.nan
 
-    return
+    return result
