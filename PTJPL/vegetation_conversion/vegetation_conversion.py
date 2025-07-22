@@ -5,11 +5,12 @@ Vegetation index conversion utilities for remote sensing and land surface modeli
 This module provides functions to convert between NDVI, FVC, LAI, SAVI, fAPAR, and fIPAR using empirical and semi-empirical relationships.
 All functions support both Raster and numpy ndarray inputs.
 """
-
+import warnings
 from typing import Union
 import numpy as np
 import rasters as rt
 from rasters import Raster
+from yaml import warnings
 
 # Extinction coefficient for PAR (photosynthetically active radiation)
 KPAR = 0.5
@@ -64,8 +65,12 @@ def LAI_from_NDVI(
     fIPAR = rt.clip(NDVI - 0.05, min_fIPAR, max_fIPAR)
     # Set fIPAR=0 to NaN to avoid log(1)
     fIPAR = np.where(fIPAR == 0, np.nan, fIPAR)
-    # Beer-Lambert law for LAI
-    LAI = rt.clip(-np.log(1 - fIPAR) * (1 / KPAR), min_LAI, max_LAI)
+    
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        # Beer-Lambert law for LAI
+        LAI = rt.clip(-np.log(1 - fIPAR) * (1 / KPAR), min_LAI, max_LAI)
+    
     return LAI
 
 def SAVI_from_NDVI(NDVI: Union[Raster, np.ndarray]) -> Union[Raster, np.ndarray]:
