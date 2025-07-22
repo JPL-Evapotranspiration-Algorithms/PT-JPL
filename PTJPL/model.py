@@ -79,7 +79,7 @@ def PTJPL(
         resampling: str = RESAMPLING_METHOD,
         delta_Pa: Union[Raster, np.ndarray, float] = None,
         gamma_Pa: Union[Raster, np.ndarray, float] = GAMMA_PA,
-        epsilon=None,
+        epsilon: Union[Raster, np.ndarray, float] = None,
         beta_Pa: float = BETA_PA,
         PT_alpha: float = PT_ALPHA,
         minimum_Topt: float = MINIMUM_TOPT,
