@@ -10,7 +10,6 @@ from typing import Union
 import numpy as np
 import rasters as rt
 from rasters import Raster
-from yaml import warnings
 
 # Extinction coefficient for PAR (photosynthetically active radiation)
 KPAR = 0.5

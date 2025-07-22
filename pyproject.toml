@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 
 [project]
 name = "PTJPL"
-version = "1.4.2"
+version = "1.4.3"
 description = "Priestley-Taylor Jet Propulsion Laboratory Evapotranspiration Model"
 readme = "README.md"
 authors = [
