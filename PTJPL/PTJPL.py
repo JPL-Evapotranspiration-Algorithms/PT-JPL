@@ -9,7 +9,7 @@ from rasters import Raster, RasterGeometry
 
 from GEOS5FP import GEOS5FP
 
-from verma_net_radiation import process_verma_net_radiation, daily_Rn_integration_verma
+from verma_net_radiation import verma_net_radiation, daily_Rn_integration_verma
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
 from .constants import *
