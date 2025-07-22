@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 
 [project]
 name = "PTJPL"
-version = "1.4.0"
+version = "1.4.1"
 description = "Priestley-Taylor Jet Propulsion Laboratory Evapotranspiration Model"
 readme = "README.md"
 authors = [
@@ -20,15 +20,15 @@ dependencies = [
     "ECOv002-CMR>=1.0.5",
     "ECOv002-granules>=1.0.3",
     "ECOv003-granules",
-    "GEOS5FP>=1.1.1",
+    "GEOS5FP>=1.2.2",
     "monte-carlo-sensitivity",
     "numpy",
     "pandas",
-    "rasters>=1.4.6",
+    "rasters>=1.7.1",
     "seaborn",
     "SEBAL-soil-heat-flux",
     "solar-apparent-time",
-    "verma-net-radiation>=1.1.0"
+    "verma-net-radiation>=1.2.1"
 ]
 requires-python = ">=3.10"
 

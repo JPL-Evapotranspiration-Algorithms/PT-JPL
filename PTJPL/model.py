@@ -32,7 +32,7 @@ from rasters import Raster, RasterGeometry
 
 from GEOS5FP import GEOS5FP
 
-from verma_net_radiation import process_verma_net_radiation, daily_Rn_integration_verma
+from verma_net_radiation import verma_net_radiation, daily_Rn_integration_verma
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
 from .constants import *
@@ -79,7 +79,7 @@ def PTJPL(
         resampling: str = RESAMPLING_METHOD,
         delta_Pa: Union[Raster, np.ndarray, float] = None,
         gamma_Pa: Union[Raster, np.ndarray, float] = GAMMA_PA,
-        epsilon=None,
+        epsilon: Union[Raster, np.ndarray, float] = None,
         beta_Pa: float = BETA_PA,
         PT_alpha: float = PT_ALPHA,
         minimum_Topt: float = MINIMUM_TOPT,
@@ -172,13 +172,17 @@ def PTJPL(
             )
 
         # Calculate net radiation using Verma et al. method
-        Rn_results = process_verma_net_radiation(
+        Rn_results = verma_net_radiation(
             SWin=SWin,
             albedo=albedo,
             ST_C=ST_C,
             emissivity=emissivity,
             Ta_C=Ta_C,
-            RH=RH
+            RH=RH,
+            geometry=geometry,
+            time_UTC=time_UTC,
+            resampling=resampling,
+            GEOS5FP_connection=GEOS5FP_connection
         )
 
         Rn = Rn_results["Rn"]
