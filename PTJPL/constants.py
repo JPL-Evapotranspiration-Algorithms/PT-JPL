@@ -2,6 +2,8 @@
 #
 # This module defines key physical and empirical constants for the Priestley-Taylor Jet Propulsion Laboratory (PT-JPL) evapotranspiration model.
 
+RESAMPLING_METHOD = "cubic"
+
 # Priestley-Taylor coefficient alpha (dimensionless)
 # Typical value for unstressed vegetation
 PT_ALPHA = 1.26

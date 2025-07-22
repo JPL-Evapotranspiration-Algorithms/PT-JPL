@@ -76,7 +76,7 @@ def PTJPL(
         geometry: RasterGeometry = None,
         time_UTC: datetime = None,
         GEOS5FP_connection: GEOS5FP = None,
-        resampling: str = "nearest",
+        resampling: str = RESAMPLING_METHOD,
         delta_Pa: Union[Raster, np.ndarray, float] = None,
         gamma_Pa: Union[Raster, np.ndarray, float] = GAMMA_PA,
         epsilon=None,
