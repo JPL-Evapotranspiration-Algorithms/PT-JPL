@@ -46,5 +46,8 @@ dev = [
 [tool.setuptools.package-data]
 PTJPL = ["*.txt", "*.tif"]
 
+[tool.setuptools.packages.find]
+exclude = ["notebooks*", "references*"]
+
 [project.urls]
 "Homepage" = "https://github.com/JPL-Evapotranspiration-Algorithms/PTJPL"
