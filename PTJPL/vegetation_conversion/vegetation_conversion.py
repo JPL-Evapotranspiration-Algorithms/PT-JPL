@@ -38,7 +38,7 @@ def FVC_from_NDVI(NDVI: Union[Raster, np.ndarray]) -> Union[Raster, np.ndarray]:
     FVC = rt.clip((NDVI - NDVIs) / (NDVIv - NDVIs), 0.0, 1.0)
     return FVC
 
-def LAI_from_NDVI(
+def carlson_leaf_area_index(
         NDVI: Union[Raster, np.ndarray],
         min_fIPAR: float = MIN_FIPAR,
         max_fIPAR: float = MAX_FIPAR,

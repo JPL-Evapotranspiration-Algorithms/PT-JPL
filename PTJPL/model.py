@@ -32,6 +32,8 @@ from rasters import Raster, RasterGeometry
 
 from GEOS5FP import GEOS5FP
 
+from carlson_leaf_area_index import carlson_leaf_area_index
+
 from verma_net_radiation import verma_net_radiation, daily_Rn_integration_verma
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
@@ -42,7 +44,6 @@ from .meteorology_conversion import SVP_Pa_from_Ta_C
 from .priestley_taylor import GAMMA_PA
 from .priestley_taylor import delta_Pa_from_Ta_C
 
-from .vegetation_conversion import LAI_from_NDVI
 from .vegetation_conversion import SAVI_from_NDVI
 from .vegetation_conversion import fAPAR_from_SAVI
 from .vegetation_conversion import fIPAR_from_NDVI
@@ -255,7 +256,7 @@ def PTJPL(
     fT = calculate_plant_temperature_constraint(Ta_C, Topt)
 
     # Calculate Leaf Area Index (LAI) from NDVI
-    LAI = LAI_from_NDVI(NDVI)
+    LAI = carlson_leaf_area_index(NDVI)
 
     # --- Priestley-Taylor epsilon calculation ---
 

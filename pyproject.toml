@@ -16,6 +16,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "carlson-fractional-vegetation-cover",
+    "carlson-leaf-area-index",
     "colored-logging",
     "ECOv002-CMR>=1.0.5",
     "ECOv002-granules>=1.0.3",
