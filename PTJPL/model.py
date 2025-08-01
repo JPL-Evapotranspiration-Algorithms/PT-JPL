@@ -86,7 +86,7 @@ def PTJPL(
         PT_alpha: float = PT_ALPHA,
         minimum_Topt: float = MINIMUM_TOPT,
         RH_threshold: float = RH_THRESHOLD,
-        MIN_FWET: float = MIN_FWET,
+        min_FWET: float = MIN_FWET,
         floor_Topt: bool = FLOOR_TOPT) -> Dict[str, np.ndarray]:
     """
     Compute PT-JPL evapotranspiration and its components.
@@ -227,8 +227,8 @@ def PTJPL(
     # Calculate relative surface wetness from RH
     fwet = calculate_relative_surface_wetness(
         RH=RH,
-        RH_threshold=RH_THRESHOLD,
-        min_fwet=MIN_FWET
+        RH_threshold=RH_threshold,
+        min_fwet=min_FWET
     )
 
     # --- Vegetation calculations ---
