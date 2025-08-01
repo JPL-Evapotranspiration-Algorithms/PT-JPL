@@ -44,7 +44,6 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["PTJPL"]
 exclude = ["notebooks", "tests"]
 
 [tool.setuptools.package-data]
