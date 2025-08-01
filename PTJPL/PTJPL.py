@@ -26,6 +26,8 @@ from .vegetation_conversion import fAPAR_from_SAVI
 from .vegetation_conversion import fIPAR_from_NDVI
 
 from .partitioning import calculate_relative_surface_wetness
+from .partitioning import RH_THRESHOLD
+from .partitioning import MIN_FWET
 from .partitioning import calculate_green_canopy_fraction
 from .partitioning import calculate_plant_moisture_constraint
 from .partitioning import calculate_soil_moisture_constraint
