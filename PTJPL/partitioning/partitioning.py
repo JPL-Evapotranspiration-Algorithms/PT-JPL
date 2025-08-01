@@ -3,7 +3,7 @@ import numpy as np
 import rasters as rt
 from rasters import Raster
 
-from .fwet import calculate_relative_surface_wetness
+from .fwet import calculate_relative_surface_wetness, RH_THRESHOLD, MIN_FWET
 from .fg import calculate_green_canopy_fraction
 from .fM import calculate_plant_moisture_constraint
 from .fSM import calculate_soil_moisture_constraint
