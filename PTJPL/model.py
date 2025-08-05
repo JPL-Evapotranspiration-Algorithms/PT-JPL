@@ -48,6 +48,7 @@ from .vegetation_conversion import SAVI_from_NDVI
 from .vegetation_conversion import fAPAR_from_SAVI
 from .vegetation_conversion import fIPAR_from_NDVI
 
+from .partitioning import RH_THRESHOLD, MIN_FWET
 from .partitioning import calculate_relative_surface_wetness
 from .partitioning import calculate_green_canopy_fraction
 from .partitioning import calculate_plant_moisture_constraint
@@ -84,6 +85,8 @@ def PTJPL(
         beta_Pa: float = BETA_PA,
         PT_alpha: float = PT_ALPHA,
         minimum_Topt: float = MINIMUM_TOPT,
+        RH_threshold: float = RH_THRESHOLD,
+        min_FWET: float = MIN_FWET,
         floor_Topt: bool = FLOOR_TOPT) -> Dict[str, np.ndarray]:
     """
     Compute PT-JPL evapotranspiration and its components.
@@ -110,6 +113,10 @@ def PTJPL(
         beta_Pa: Soil moisture constraint parameter (default from constants)
         PT_alpha: Priestley-Taylor coefficient (default from constants)
         minimum_Topt: Minimum allowed Topt (default from constants)
+        RH_threshold: Relative humidity threshold below which surface wetness is set to minimum (default: 0.7).
+            Used in the calculation of relative surface wetness (fwet). Set to None to disable thresholding and emulate ECOSTRESS collection 1 and 2 PT-JPL.
+        MIN_FWET: Minimum relative surface wetness (default: 0.0001).
+            Used in the calculation of relative surface wetness (fwet) to avoid zero wetness. Set to 0.0 to emulate ECOSTRESS collection 1 and 2 PT-JPL.
         floor_Topt: Whether to floor Topt to Ta_C if Ta_C > Topt (default from constants)
 
     Returns:
@@ -218,7 +225,11 @@ def PTJPL(
     VPD_Pa = rt.clip(SVP_Pa - Ea_Pa, 0, None)
 
     # Calculate relative surface wetness from RH
-    fwet = calculate_relative_surface_wetness(RH)
+    fwet = calculate_relative_surface_wetness(
+        RH=RH,
+        RH_threshold=RH_threshold,
+        min_fwet=min_FWET
+    )
 
     # --- Vegetation calculations ---
 
