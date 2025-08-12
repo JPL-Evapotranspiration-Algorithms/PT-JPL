@@ -86,10 +86,10 @@ def process_PTJPL_table(
         NDVI=NDVI,
         Ta_C=Ta_C,
         RH=RH,
-        Rn=Rn,
-        Topt=Topt,
+        Rn_Wm2=Rn,
+        Topt_C=Topt,
         fAPARmax=fAPARmax,
-        G=G,
+        G_Wm2=G,
         RH_threshold=RH_threshold,
         min_fwet=min_fwet
     )

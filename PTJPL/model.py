@@ -68,12 +68,12 @@ def PTJPL(
         ST_C: Union[Raster, np.ndarray] = None,
         emissivity: Union[Raster, np.ndarray] = None,
         albedo: Union[Raster, np.ndarray] = None,
-        Rn: Union[Raster, np.ndarray] = None,
+        Rn_Wm2: Union[Raster, np.ndarray] = None,
         Ta_C: Union[Raster, np.ndarray] = None,
         RH: Union[Raster, np.ndarray] = None,
-        SWin: Union[Raster, np.ndarray] = None,
-        G: Union[Raster, np.ndarray] = None,
-        Topt: Union[Raster, np.ndarray] = None,
+        SWin_Wm2: Union[Raster, np.ndarray] = None,
+        G_Wm2: Union[Raster, np.ndarray] = None,
+        Topt_C: Union[Raster, np.ndarray] = None,
         fAPARmax: Union[Raster, np.ndarray] = None,
         geometry: RasterGeometry = None,
         time_UTC: datetime = None,
@@ -136,8 +136,8 @@ def PTJPL(
         geometry = NDVI.geometry
 
     # Load Topt if not provided and geometry is available
-    if Topt is None and geometry is not None:
-        Topt = load_Topt(geometry)
+    if Topt_C is None and geometry is not None:
+        Topt_C = load_Topt(geometry)
 
     # Load fAPARmax if not provided and geometry is available
     if fAPARmax is None and geometry is not None:
@@ -170,10 +170,10 @@ def PTJPL(
         raise ValueError("relative humidity (RH) not given")
 
     # Compute net radiation if not provided, using albedo, ST_C, and emissivity
-    if Rn is None and albedo is not None and ST_C is not None and emissivity is not None:
+    if Rn_Wm2 is None and albedo is not None and ST_C is not None and emissivity is not None:
         # Retrieve incoming shortwave if not provided
-        if SWin is None and geometry is not None and time_UTC is not None:
-            SWin = GEOS5FP_connection.SWin(
+        if SWin_Wm2 is None and geometry is not None and time_UTC is not None:
+            SWin_Wm2 = GEOS5FP_connection.SWin(
                 time_UTC=time_UTC,
                 geometry=geometry,
                 resampling=resampling
@@ -181,7 +181,7 @@ def PTJPL(
 
         # Calculate net radiation using Verma et al. method
         Rn_results = verma_net_radiation(
-            SWin=SWin,
+            SWin=SWin_Wm2,
             albedo=albedo,
             ST_C=ST_C,
             emissivity=emissivity,
@@ -193,21 +193,21 @@ def PTJPL(
             GEOS5FP_connection=GEOS5FP_connection
         )
 
-        Rn = Rn_results["Rn"]
+        Rn_Wm2 = Rn_results["Rn"]
 
-    if Rn is None:
+    if Rn_Wm2 is None:
         raise ValueError("net radiation (Rn) not given")
 
     # Compute soil heat flux if not provided, using SEBAL method
-    if G is None and Rn is not None and ST_C is not None and NDVI is not None and albedo is not None:
-        G = calculate_SEBAL_soil_heat_flux(
-            Rn=Rn,
+    if G_Wm2 is None and Rn_Wm2 is not None and ST_C is not None and NDVI is not None and albedo is not None:
+        G_Wm2 = calculate_SEBAL_soil_heat_flux(
+            Rn=Rn_Wm2,
             ST_C=ST_C,
             NDVI=NDVI,
             albedo=albedo
         )
 
-    if G is None:
+    if G_Wm2 is None:
         raise ValueError("soil heat flux (G) not given")
 
     # --- Meteorological calculations ---
@@ -258,13 +258,13 @@ def PTJPL(
 
     if floor_Topt:
         # If Topt exceeds observed air temperature, set Topt to Ta_C
-        Topt = rt.where(Ta_C > Topt, Ta_C, Topt)
+        Topt_C = rt.where(Ta_C > Topt_C, Ta_C, Topt_C)
 
     # Enforce minimum Topt
-    Topt = rt.clip(Topt, minimum_Topt, None)
+    Topt_C = rt.clip(Topt_C, minimum_Topt, None)
 
     # Calculate plant temperature constraint (fT) from Ta_C and Topt
-    fT = calculate_plant_temperature_constraint(Ta_C, Topt)
+    fT = calculate_plant_temperature_constraint(Ta_C, Topt_C)
 
     # Calculate Leaf Area Index (LAI) from NDVI
     LAI = carlson_leaf_area_index(NDVI)
@@ -283,21 +283,21 @@ def PTJPL(
     # --- Soil evaporation ---
 
     # Calculate net radiation to soil from LAI
-    Rn_soil = calculate_soil_net_radiation(Rn, LAI)
+    Rn_soil = calculate_soil_net_radiation(Rn_Wm2, LAI)
     results["Rn_soil"] = Rn_soil
 
     # Calculate soil evaporation (LE_soil)
-    LE_soil = calculate_soil_latent_heat_flux(Rn_soil, G, epsilon, fwet, fSM, PT_alpha)
+    LE_soil = calculate_soil_latent_heat_flux(Rn_soil, G_Wm2, epsilon, fwet, fSM, PT_alpha)
     results["LE_soil"] = LE_soil
 
     # --- Canopy transpiration ---
 
     # Net radiation to canopy is total minus soil
-    Rn_canopy = Rn - Rn_soil
+    Rn_canopy = Rn_Wm2 - Rn_soil
     results["Rn_canopy"] = Rn_canopy
 
     # Calculate potential evapotranspiration (PET)
-    PET = PT_alpha * epsilon * (Rn - G)
+    PET = PT_alpha * epsilon * (Rn_Wm2 - G_Wm2)
     results["PET"] = PET
 
     # Calculate canopy transpiration (LE_canopy)
