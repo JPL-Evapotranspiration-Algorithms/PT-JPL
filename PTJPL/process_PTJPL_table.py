@@ -7,13 +7,18 @@ from pandas import DataFrame
 
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
+from .constants import *
 from .model import PTJPL
 from .Topt import load_Topt
 from .fAPARmax import load_fAPARmax
+from .partitioning.fwet import RH_THRESHOLD, MIN_FWET
 
 logger = logging.getLogger(__name__)
 
-def process_PTJPL_table(input_df: DataFrame) -> DataFrame:
+def process_PTJPL_table(
+        input_df: DataFrame,
+        RH_threshold=RH_THRESHOLD,
+        min_fwet=MIN_FWET) -> DataFrame:
     """
     Processes a DataFrame containing input variables for the PT-JPL model and returns a DataFrame with PT-JPL outputs.
 
@@ -84,7 +89,9 @@ def process_PTJPL_table(input_df: DataFrame) -> DataFrame:
         Rn=Rn,
         Topt=Topt,
         fAPARmax=fAPARmax,
-        G=G
+        G=G,
+        RH_threshold=RH_threshold,
+        min_fwet=min_fwet
     )
 
     # Copy input DataFrame to avoid modifying original
