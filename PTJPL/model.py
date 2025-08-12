@@ -89,45 +89,70 @@ def PTJPL(
         min_FWET: float = MIN_FWET,
         floor_Topt: bool = FLOOR_TOPT) -> Dict[str, np.ndarray]:
     """
-    Compute PT-JPL evapotranspiration and its components.
+    Computes instantaneous latent heat fluxes (evapotranspiration) and its partitioning into soil evaporation, canopy transpiration, and interception evaporation using the PT-JPL model.
 
-    Parameters:
-        NDVI: Normalized Difference Vegetation Index (array or Raster)
-        ST_C: Surface temperature in Celsius (array or Raster)
-        emissivity: Surface emissivity (array or Raster)
-        albedo: Surface albedo (array or Raster)
-        Rn: Net radiation (array or Raster)
-        Ta_C: Air temperature in Celsius (array or Raster)
-        RH: Relative humidity (array or Raster, 0-1)
-        SWin: Incoming shortwave radiation (array or Raster)
-        G: Soil heat flux (array or Raster)
-        Topt: Optimum temperature for photosynthesis (array or Raster)
-        fAPARmax: Maximum fraction of absorbed PAR (array or Raster)
-        geometry: RasterGeometry object (optional)
-        time_UTC: Datetime object for meteorological data (optional)
-        GEOS5FP_connection: GEOS5FP object for meteorological data (optional)
-        resampling: Resampling method for meteorological data (default "nearest")
-        delta_Pa: Slope of saturation vapor pressure curve (optional)
-        gamma_Pa: Psychrometric constant (default from constants)
-        epsilon: Ratio delta/(delta+gamma) (optional)
-        beta_Pa: Soil moisture constraint parameter (default from constants)
-        PT_alpha: Priestley-Taylor coefficient (default from constants)
-        minimum_Topt: Minimum allowed Topt (default from constants)
-        RH_threshold: Relative humidity threshold below which surface wetness is set to minimum (default: 0.7).
-            Used in the calculation of relative surface wetness (fwet). Set to None to disable thresholding and emulate ECOSTRESS collection 1 and 2 PT-JPL.
-        MIN_FWET: Minimum relative surface wetness (default: 0.0001).
-            Used in the calculation of relative surface wetness (fwet) to avoid zero wetness. Set to 0.0 to emulate ECOSTRESS collection 1 and 2 PT-JPL.
-        floor_Topt: Whether to floor Topt to Ta_C if Ta_C > Topt (default from constants)
+    Parameters
+    ----------
+    NDVI : Raster or np.ndarray
+        Normalized Difference Vegetation Index.
+    ST_C : Raster or np.ndarray, optional
+        Surface temperature in Celsius.
+    emissivity : Raster or np.ndarray, optional
+        Surface emissivity.
+    albedo : Raster or np.ndarray, optional
+        Surface albedo.
+    Rn_Wm2 : Raster or np.ndarray, optional
+        Net radiation (W/m^2).
+    Ta_C : Raster or np.ndarray, optional
+        Air temperature in Celsius.
+    RH : Raster or np.ndarray, optional
+        Relative humidity (0-1).
+    SWin_Wm2 : Raster or np.ndarray, optional
+        Incoming shortwave radiation (W/m^2).
+    G_Wm2 : Raster or np.ndarray, optional
+        Soil heat flux (W/m^2).
+    Topt_C : Raster or np.ndarray, optional
+        Optimum temperature for photosynthesis (C).
+    fAPARmax : Raster or np.ndarray, optional
+        Maximum fraction of absorbed PAR.
+    geometry : RasterGeometry, optional
+        Geometry for spatial data.
+    time_UTC : datetime, optional
+        UTC time for meteorological data.
+    GEOS5FP_connection : GEOS5FP, optional
+        Connection for meteorological data.
+    resampling : str, optional
+        Resampling method for meteorological data (default from constants).
+    delta_Pa : Raster, np.ndarray, or float, optional
+        Slope of saturation vapor pressure curve.
+    gamma_Pa : Raster, np.ndarray, or float, optional
+        Psychrometric constant (default from constants).
+    epsilon : Raster, np.ndarray, or float, optional
+        Ratio delta/(delta+gamma).
+    beta_Pa : float, optional
+        Soil moisture constraint parameter (default from constants).
+    PT_alpha : float, optional
+        Priestley-Taylor coefficient (default from constants).
+    minimum_Topt : float, optional
+        Minimum allowed Topt (default from constants).
+    RH_threshold : float, optional
+        Relative humidity threshold for surface wetness (default: 0.7). Set None to disable thresholding.
+    min_FWET : float, optional
+        Minimum relative surface wetness (default: 0.0001). Set 0.0 to emulate ECOSTRESS collection 1/2.
+    floor_Topt : bool, optional
+        If True, floor Topt to Ta_C if Ta_C > Topt (default from constants).
 
-    Returns:
-        Dictionary with keys:
-            - "Rn_soil": Net radiation to soil
-            - "LE_soil": Soil evaporation
-            - "Rn_canopy": Net radiation to canopy
-            - "PET": Potential evapotranspiration
-            - "LE_canopy": Canopy transpiration
-            - "LE_interception": Interception evaporation
-            - "LE": Total latent heat flux (evapotranspiration)
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        Dictionary containing:
+            'Rn_soil' : Net radiation to soil (W/m^2)
+            'LE_soil' : Soil evaporation (W/m^2)
+            'Rn_canopy' : Net radiation to canopy (W/m^2)
+            'PET' : Potential evapotranspiration (W/m^2)
+            'LE_canopy' : Canopy transpiration (W/m^2)
+            'LE_interception' : Interception evaporation (W/m^2)
+            'LE' : Total latent heat flux (evapotranspiration, W/m^2)
     """
     results = {}
 
