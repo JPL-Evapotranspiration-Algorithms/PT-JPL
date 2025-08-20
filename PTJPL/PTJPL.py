@@ -13,7 +13,7 @@ from carlson_leaf_area_index import carlson_leaf_area_index
 
 from meteorology_conversion import SVP_Pa_from_Ta_C
 
-from verma_net_radiation import verma_net_radiation, daily_Rn_integration_verma
+from verma_net_radiation import verma_net_radiation, daylight_Rn_integration_verma
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
 from priestley_taylor import GAMMA_PA
