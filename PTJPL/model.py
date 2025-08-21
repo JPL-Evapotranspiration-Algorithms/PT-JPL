@@ -37,6 +37,7 @@ from carlson_leaf_area_index import carlson_leaf_area_index
 from meteorology_conversion import SVP_Pa_from_Ta_C
 
 from verma_net_radiation import verma_net_radiation, daylight_Rn_integration_verma
+from daylight_evapotranspiration import daylight_ET_from_instantaneous_LE
 from sun_angles import calculate_daylight
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
@@ -366,27 +367,16 @@ def PTJPL(
 
     # --- Daylight upscaling ---
     if upscale_to_daylight and time_UTC is not None:
-        # Calculate daylight net radiation
-        Rn_daylight_Wm2 = daylight_Rn_integration_verma(
-            Rn_Wm2=Rn_Wm2,
+        # Use new upscaling function from daylight_evapotranspiration
+        daylight_results = daylight_ET_from_instantaneous_LE(
+            LE_instantaneous_Wm2=LE_Wm2,
+            Rn_instantaneous_Wm2=Rn_Wm2,
+            G_instantaneous_Wm2=G_Wm2,
+            day_of_year=day_of_year,
             time_UTC=time_UTC,
             geometry=geometry
         )
-        results["Rn_daylight_Wm2"] = Rn_daylight_Wm2
-        # Calculate evaporative fraction
-        EF = np.where((LE_Wm2 == 0) | ((Rn_Wm2 - G_Wm2) == 0), 0, LE_Wm2 / (Rn_Wm2 - G_Wm2))
-        results["EF"] = EF
-        # Latent heat flux during daylight
-        LE_daylight_Wm2 = EF * Rn_daylight_Wm2
-        results["LE_daylight_Wm2"] = LE_daylight_Wm2
-        # Calculate daylight hours
-        if day_of_year is not None:
-            daylight_hours = calculate_daylight(day_of_year=day_of_year, time_UTC=time_UTC, geometry=geometry)
-        else:
-            daylight_hours = calculate_daylight(time_UTC=time_UTC, geometry=geometry)
-        daylight_seconds = daylight_hours * 3600.0
-        LAMBDA_JKG_WATER_20C = 2450000.0
-        ET_daylight_kg = np.clip(LE_daylight_Wm2 * daylight_seconds / LAMBDA_JKG_WATER_20C, 0.0, None)
-        results["ET_daylight_kg"] = ET_daylight_kg
+        # Add all returned daylight results to output
+        results.update(daylight_results)
 
     return results
