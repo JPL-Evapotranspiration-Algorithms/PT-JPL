@@ -34,15 +34,17 @@ from GEOS5FP import GEOS5FP
 
 from carlson_leaf_area_index import carlson_leaf_area_index
 
-from verma_net_radiation import verma_net_radiation, daily_Rn_integration_verma
+from meteorology_conversion import SVP_Pa_from_Ta_C
+
+from verma_net_radiation import verma_net_radiation, daylight_Rn_integration_verma
+from daylight_evapotranspiration import daylight_ET_from_instantaneous_LE
+from sun_angles import calculate_daylight
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
+from priestley_taylor import GAMMA_PA
+from priestley_taylor import delta_Pa_from_Ta_C
+
 from .constants import *
-
-from .meteorology_conversion import SVP_Pa_from_Ta_C
-
-from .priestley_taylor import GAMMA_PA
-from .priestley_taylor import delta_Pa_from_Ta_C
 
 from .vegetation_conversion import SAVI_from_NDVI
 from .vegetation_conversion import fAPAR_from_SAVI
@@ -64,70 +66,101 @@ from .fAPARmax import load_fAPARmax
 from .Topt import load_Topt
 
 def PTJPL(
-        NDVI: Union[Raster, np.ndarray],
-        ST_C: Union[Raster, np.ndarray] = None,
-        emissivity: Union[Raster, np.ndarray] = None,
-        albedo: Union[Raster, np.ndarray] = None,
-        Rn: Union[Raster, np.ndarray] = None,
-        Ta_C: Union[Raster, np.ndarray] = None,
-        RH: Union[Raster, np.ndarray] = None,
-        SWin: Union[Raster, np.ndarray] = None,
-        G: Union[Raster, np.ndarray] = None,
-        Topt: Union[Raster, np.ndarray] = None,
-        fAPARmax: Union[Raster, np.ndarray] = None,
-        geometry: RasterGeometry = None,
-        time_UTC: datetime = None,
-        GEOS5FP_connection: GEOS5FP = None,
-        resampling: str = RESAMPLING_METHOD,
-        delta_Pa: Union[Raster, np.ndarray, float] = None,
-        gamma_Pa: Union[Raster, np.ndarray, float] = GAMMA_PA,
-        epsilon: Union[Raster, np.ndarray, float] = None,
-        beta_Pa: float = BETA_PA,
-        PT_alpha: float = PT_ALPHA,
-        minimum_Topt: float = MINIMUM_TOPT,
-        RH_threshold: float = RH_THRESHOLD,
-        min_FWET: float = MIN_FWET,
-        floor_Topt: bool = FLOOR_TOPT) -> Dict[str, np.ndarray]:
+    NDVI: Union[Raster, np.ndarray],
+    ST_C: Union[Raster, np.ndarray] = None,
+    emissivity: Union[Raster, np.ndarray] = None,
+    albedo: Union[Raster, np.ndarray] = None,
+    Rn_Wm2: Union[Raster, np.ndarray] = None,
+    Ta_C: Union[Raster, np.ndarray] = None,
+    RH: Union[Raster, np.ndarray] = None,
+    SWin_Wm2: Union[Raster, np.ndarray] = None,
+    G_Wm2: Union[Raster, np.ndarray] = None,
+    Topt_C: Union[Raster, np.ndarray] = None,
+    fAPARmax: Union[Raster, np.ndarray] = None,
+    geometry: RasterGeometry = None,
+    time_UTC: datetime = None,
+    GEOS5FP_connection: GEOS5FP = None,
+    resampling: str = RESAMPLING_METHOD,
+    delta_Pa: Union[Raster, np.ndarray, float] = None,
+    gamma_Pa: Union[Raster, np.ndarray, float] = GAMMA_PA,
+    epsilon: Union[Raster, np.ndarray, float] = None,
+    beta_Pa: float = BETA_PA,
+    PT_alpha: float = PT_ALPHA,
+    minimum_Topt: float = MINIMUM_TOPT,
+    RH_threshold: float = RH_THRESHOLD,
+    min_FWET: float = MIN_FWET,
+    floor_Topt: bool = FLOOR_TOPT,
+    upscale_to_daylight: bool = False,
+    day_of_year: np.ndarray = None) -> Dict[str, np.ndarray]:
     """
-    Compute PT-JPL evapotranspiration and its components.
+    Computes instantaneous latent heat fluxes (evapotranspiration) and its partitioning into soil evaporation, canopy transpiration, and interception evaporation using the PT-JPL model.
 
-    Parameters:
-        NDVI: Normalized Difference Vegetation Index (array or Raster)
-        ST_C: Surface temperature in Celsius (array or Raster)
-        emissivity: Surface emissivity (array or Raster)
-        albedo: Surface albedo (array or Raster)
-        Rn: Net radiation (array or Raster)
-        Ta_C: Air temperature in Celsius (array or Raster)
-        RH: Relative humidity (array or Raster, 0-1)
-        SWin: Incoming shortwave radiation (array or Raster)
-        G: Soil heat flux (array or Raster)
-        Topt: Optimum temperature for photosynthesis (array or Raster)
-        fAPARmax: Maximum fraction of absorbed PAR (array or Raster)
-        geometry: RasterGeometry object (optional)
-        time_UTC: Datetime object for meteorological data (optional)
-        GEOS5FP_connection: GEOS5FP object for meteorological data (optional)
-        resampling: Resampling method for meteorological data (default "nearest")
-        delta_Pa: Slope of saturation vapor pressure curve (optional)
-        gamma_Pa: Psychrometric constant (default from constants)
-        epsilon: Ratio delta/(delta+gamma) (optional)
-        beta_Pa: Soil moisture constraint parameter (default from constants)
-        PT_alpha: Priestley-Taylor coefficient (default from constants)
-        minimum_Topt: Minimum allowed Topt (default from constants)
-        RH_threshold: Relative humidity threshold below which surface wetness is set to minimum (default: 0.7).
-            Used in the calculation of relative surface wetness (fwet). Set to None to disable thresholding and emulate ECOSTRESS collection 1 and 2 PT-JPL.
-        MIN_FWET: Minimum relative surface wetness (default: 0.0001).
-            Used in the calculation of relative surface wetness (fwet) to avoid zero wetness. Set to 0.0 to emulate ECOSTRESS collection 1 and 2 PT-JPL.
-        floor_Topt: Whether to floor Topt to Ta_C if Ta_C > Topt (default from constants)
+    Parameters
+    ----------
+    NDVI : Raster or np.ndarray
+        Normalized Difference Vegetation Index.
+    ST_C : Raster or np.ndarray, optional
+        Surface temperature in Celsius.
+    emissivity : Raster or np.ndarray, optional
+        Surface emissivity.
+    albedo : Raster or np.ndarray, optional
+        Surface albedo.
+    Rn_Wm2 : Raster or np.ndarray, optional
+        Net radiation (W/m^2).
+    Ta_C : Raster or np.ndarray, optional
+        Air temperature in Celsius.
+    RH : Raster or np.ndarray, optional
+        Relative humidity (0-1).
+    SWin_Wm2 : Raster or np.ndarray, optional
+        Incoming shortwave radiation (W/m^2).
+    G_Wm2 : Raster or np.ndarray, optional
+        Soil heat flux (W/m^2).
+    Topt_C : Raster or np.ndarray, optional
+        Optimum temperature for photosynthesis (C).
+    fAPARmax : Raster or np.ndarray, optional
+        Maximum fraction of absorbed PAR.
+    geometry : RasterGeometry, optional
+        Geometry for spatial data.
+    time_UTC : datetime, optional
+        UTC time for meteorological data.
+    GEOS5FP_connection : GEOS5FP, optional
+        Connection for meteorological data.
+    resampling : str, optional
+        Resampling method for meteorological data (default from constants).
+    delta_Pa : Raster, np.ndarray, or float, optional
+        Slope of saturation vapor pressure curve.
+    gamma_Pa : Raster, np.ndarray, or float, optional
+        Psychrometric constant (default from constants).
+    epsilon : Raster, np.ndarray, or float, optional
+        Ratio delta/(delta+gamma).
+    beta_Pa : float, optional
+        Soil moisture constraint parameter (default from constants).
+    PT_alpha : float, optional
+        Priestley-Taylor coefficient (default from constants).
+    minimum_Topt : float, optional
+        Minimum allowed Topt (default from constants).
+    RH_threshold : float, optional
+        Relative humidity threshold for surface wetness (default: 0.7). Set None to disable thresholding.
+    min_FWET : float, optional
+        Minimum relative surface wetness (default: 0.0001). Set 0.0 to emulate ECOSTRESS collection 1/2.
+    floor_Topt : bool, optional
+        If True, floor Topt to Ta_C if Ta_C > Topt (default from constants).
 
-    Returns:
-        Dictionary with keys:
-            - "Rn_soil": Net radiation to soil
-            - "LE_soil": Soil evaporation
-            - "Rn_canopy": Net radiation to canopy
-            - "PET": Potential evapotranspiration
-            - "LE_canopy": Canopy transpiration
-            - "LE_interception": Interception evaporation
-            - "LE": Total latent heat flux (evapotranspiration)
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        Dictionary containing:
+            'Rn_soil' : Net radiation to soil (W/m^2)
+            'LE_soil' : Soil evaporation (W/m^2)
+            'Rn_canopy' : Net radiation to canopy (W/m^2)
+            'PET' : Potential evapotranspiration (W/m^2)
+            'LE_canopy' : Canopy transpiration (W/m^2)
+            'LE_interception' : Interception evaporation (W/m^2)
+            'LE' : Total latent heat flux (evapotranspiration, W/m^2)
+            If upscale_to_daylight=True and time_UTC is provided:
+                'Rn_daylight' : Net radiation during daylight (W/m^2)
+                'LE_daylight' : Latent heat flux during daylight (W/m^2)
+                'ET_daylight_kg' : Daylight ET in kg/m^2
     """
     results = {}
 
@@ -136,8 +169,8 @@ def PTJPL(
         geometry = NDVI.geometry
 
     # Load Topt if not provided and geometry is available
-    if Topt is None and geometry is not None:
-        Topt = load_Topt(geometry)
+    if Topt_C is None and geometry is not None:
+        Topt_C = load_Topt(geometry)
 
     # Load fAPARmax if not provided and geometry is available
     if fAPARmax is None and geometry is not None:
@@ -170,10 +203,10 @@ def PTJPL(
         raise ValueError("relative humidity (RH) not given")
 
     # Compute net radiation if not provided, using albedo, ST_C, and emissivity
-    if Rn is None and albedo is not None and ST_C is not None and emissivity is not None:
+    if Rn_Wm2 is None and albedo is not None and ST_C is not None and emissivity is not None:
         # Retrieve incoming shortwave if not provided
-        if SWin is None and geometry is not None and time_UTC is not None:
-            SWin = GEOS5FP_connection.SWin(
+        if SWin_Wm2 is None and geometry is not None and time_UTC is not None:
+            SWin_Wm2 = GEOS5FP_connection.SWin(
                 time_UTC=time_UTC,
                 geometry=geometry,
                 resampling=resampling
@@ -181,7 +214,7 @@ def PTJPL(
 
         # Calculate net radiation using Verma et al. method
         Rn_results = verma_net_radiation(
-            SWin=SWin,
+            SWin=SWin_Wm2,
             albedo=albedo,
             ST_C=ST_C,
             emissivity=emissivity,
@@ -193,21 +226,21 @@ def PTJPL(
             GEOS5FP_connection=GEOS5FP_connection
         )
 
-        Rn = Rn_results["Rn"]
+        Rn_Wm2 = Rn_results["Rn"]
 
-    if Rn is None:
+    if Rn_Wm2 is None:
         raise ValueError("net radiation (Rn) not given")
 
     # Compute soil heat flux if not provided, using SEBAL method
-    if G is None and Rn is not None and ST_C is not None and NDVI is not None and albedo is not None:
-        G = calculate_SEBAL_soil_heat_flux(
-            Rn=Rn,
+    if G_Wm2 is None and Rn_Wm2 is not None and ST_C is not None and NDVI is not None and albedo is not None:
+        G_Wm2 = calculate_SEBAL_soil_heat_flux(
+            Rn=Rn_Wm2,
             ST_C=ST_C,
             NDVI=NDVI,
             albedo=albedo
         )
 
-    if G is None:
+    if G_Wm2 is None:
         raise ValueError("soil heat flux (G) not given")
 
     # --- Meteorological calculations ---
@@ -258,13 +291,13 @@ def PTJPL(
 
     if floor_Topt:
         # If Topt exceeds observed air temperature, set Topt to Ta_C
-        Topt = rt.where(Ta_C > Topt, Ta_C, Topt)
+        Topt_C = rt.where(Ta_C > Topt_C, Ta_C, Topt_C)
 
     # Enforce minimum Topt
-    Topt = rt.clip(Topt, minimum_Topt, None)
+    Topt_C = rt.clip(Topt_C, minimum_Topt, None)
 
     # Calculate plant temperature constraint (fT) from Ta_C and Topt
-    fT = calculate_plant_temperature_constraint(Ta_C, Topt)
+    fT = calculate_plant_temperature_constraint(Ta_C, Topt_C)
 
     # Calculate Leaf Area Index (LAI) from NDVI
     LAI = carlson_leaf_area_index(NDVI)
@@ -283,26 +316,26 @@ def PTJPL(
     # --- Soil evaporation ---
 
     # Calculate net radiation to soil from LAI
-    Rn_soil = calculate_soil_net_radiation(Rn, LAI)
-    results["Rn_soil"] = Rn_soil
+    Rn_soil_Wm2 = calculate_soil_net_radiation(Rn_Wm2, LAI)
+    results["Rn_soil_Wm2"] = Rn_soil_Wm2
 
     # Calculate soil evaporation (LE_soil)
-    LE_soil = calculate_soil_latent_heat_flux(Rn_soil, G, epsilon, fwet, fSM, PT_alpha)
-    results["LE_soil"] = LE_soil
+    LE_soil_Wm2 = calculate_soil_latent_heat_flux(Rn_soil_Wm2, G_Wm2, epsilon, fwet, fSM, PT_alpha)
+    results["LE_soil_Wm2"] = LE_soil_Wm2
 
     # --- Canopy transpiration ---
 
     # Net radiation to canopy is total minus soil
-    Rn_canopy = Rn - Rn_soil
-    results["Rn_canopy"] = Rn_canopy
+    Rn_canopy_Wm2 = Rn_Wm2 - Rn_soil_Wm2
+    results["Rn_canopy_Wm2"] = Rn_canopy_Wm2
 
     # Calculate potential evapotranspiration (PET)
-    PET = PT_alpha * epsilon * (Rn - G)
-    results["PET"] = PET
+    PET_Wm2 = PT_alpha * epsilon * (Rn_Wm2 - G_Wm2)
+    results["PET_Wm2"] = PET_Wm2
 
     # Calculate canopy transpiration (LE_canopy)
-    LE_canopy = calculate_canopy_latent_heat_flux(
-        Rn_canopy=Rn_canopy,
+    LE_canopy_Wm2 = calculate_canopy_latent_heat_flux(
+        Rn_canopy=Rn_canopy_Wm2,
         epsilon=epsilon,
         fwet=fwet,
         fg=fg,
@@ -310,26 +343,40 @@ def PTJPL(
         fM=fM,
         PT_alpha=PT_alpha
     )
-    results["LE_canopy"] = LE_canopy
+    results["LE_canopy_Wm2"] = LE_canopy_Wm2
 
     # --- Interception evaporation ---
 
     # Calculate interception evaporation (LE_interception)
-    LE_interception = calculate_interception(
-        Rn_canopy=Rn_canopy,
+    LE_interception_Wm2 = calculate_interception(
+        Rn_canopy=Rn_canopy_Wm2,
         epsilon=epsilon,
         fwet=fwet,
         PT_alpha=PT_alpha
     )
-    results["LE_interception"] = LE_interception
+    results["LE_interception_Wm2"] = LE_interception_Wm2
 
     # --- Combined evapotranspiration ---
 
     # Total latent heat flux (LE) is sum of soil, canopy, and interception
-    LE = LE_soil + LE_canopy + LE_interception
+    LE_Wm2 = LE_soil_Wm2 + LE_canopy_Wm2 + LE_interception_Wm2
 
     # Constrain LE between 0 and PET
-    LE = np.clip(LE, 0, PET)
-    results["LE"] = LE
+    LE_Wm2 = np.clip(LE_Wm2, 0, PET_Wm2)
+    results["LE_Wm2"] = LE_Wm2
+
+    # --- Daylight upscaling ---
+    if upscale_to_daylight and time_UTC is not None:
+        # Use new upscaling function from daylight_evapotranspiration
+        daylight_results = daylight_ET_from_instantaneous_LE(
+            LE_instantaneous_Wm2=LE_Wm2,
+            Rn_instantaneous_Wm2=Rn_Wm2,
+            G_instantaneous_Wm2=G_Wm2,
+            day_of_year=day_of_year,
+            time_UTC=time_UTC,
+            geometry=geometry
+        )
+        # Add all returned daylight results to output
+        results.update(daylight_results)
 
     return results
