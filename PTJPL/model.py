@@ -37,6 +37,7 @@ from carlson_leaf_area_index import carlson_leaf_area_index
 from meteorology_conversion import SVP_Pa_from_Ta_C
 
 from verma_net_radiation import verma_net_radiation, daylight_Rn_integration_verma
+from sun_angles import calculate_daylight
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
 from priestley_taylor import GAMMA_PA
@@ -64,30 +65,32 @@ from .fAPARmax import load_fAPARmax
 from .Topt import load_Topt
 
 def PTJPL(
-        NDVI: Union[Raster, np.ndarray],
-        ST_C: Union[Raster, np.ndarray] = None,
-        emissivity: Union[Raster, np.ndarray] = None,
-        albedo: Union[Raster, np.ndarray] = None,
-        Rn_Wm2: Union[Raster, np.ndarray] = None,
-        Ta_C: Union[Raster, np.ndarray] = None,
-        RH: Union[Raster, np.ndarray] = None,
-        SWin_Wm2: Union[Raster, np.ndarray] = None,
-        G_Wm2: Union[Raster, np.ndarray] = None,
-        Topt_C: Union[Raster, np.ndarray] = None,
-        fAPARmax: Union[Raster, np.ndarray] = None,
-        geometry: RasterGeometry = None,
-        time_UTC: datetime = None,
-        GEOS5FP_connection: GEOS5FP = None,
-        resampling: str = RESAMPLING_METHOD,
-        delta_Pa: Union[Raster, np.ndarray, float] = None,
-        gamma_Pa: Union[Raster, np.ndarray, float] = GAMMA_PA,
-        epsilon: Union[Raster, np.ndarray, float] = None,
-        beta_Pa: float = BETA_PA,
-        PT_alpha: float = PT_ALPHA,
-        minimum_Topt: float = MINIMUM_TOPT,
-        RH_threshold: float = RH_THRESHOLD,
-        min_FWET: float = MIN_FWET,
-        floor_Topt: bool = FLOOR_TOPT) -> Dict[str, np.ndarray]:
+    NDVI: Union[Raster, np.ndarray],
+    ST_C: Union[Raster, np.ndarray] = None,
+    emissivity: Union[Raster, np.ndarray] = None,
+    albedo: Union[Raster, np.ndarray] = None,
+    Rn_Wm2: Union[Raster, np.ndarray] = None,
+    Ta_C: Union[Raster, np.ndarray] = None,
+    RH: Union[Raster, np.ndarray] = None,
+    SWin_Wm2: Union[Raster, np.ndarray] = None,
+    G_Wm2: Union[Raster, np.ndarray] = None,
+    Topt_C: Union[Raster, np.ndarray] = None,
+    fAPARmax: Union[Raster, np.ndarray] = None,
+    geometry: RasterGeometry = None,
+    time_UTC: datetime = None,
+    GEOS5FP_connection: GEOS5FP = None,
+    resampling: str = RESAMPLING_METHOD,
+    delta_Pa: Union[Raster, np.ndarray, float] = None,
+    gamma_Pa: Union[Raster, np.ndarray, float] = GAMMA_PA,
+    epsilon: Union[Raster, np.ndarray, float] = None,
+    beta_Pa: float = BETA_PA,
+    PT_alpha: float = PT_ALPHA,
+    minimum_Topt: float = MINIMUM_TOPT,
+    RH_threshold: float = RH_THRESHOLD,
+    min_FWET: float = MIN_FWET,
+    floor_Topt: bool = FLOOR_TOPT,
+    upscale_to_daylight: bool = False,
+    day_of_year: np.ndarray = None) -> Dict[str, np.ndarray]:
     """
     Computes instantaneous latent heat fluxes (evapotranspiration) and its partitioning into soil evaporation, canopy transpiration, and interception evaporation using the PT-JPL model.
 
@@ -153,6 +156,10 @@ def PTJPL(
             'LE_canopy' : Canopy transpiration (W/m^2)
             'LE_interception' : Interception evaporation (W/m^2)
             'LE' : Total latent heat flux (evapotranspiration, W/m^2)
+            If upscale_to_daylight=True and time_UTC is provided:
+                'Rn_daylight' : Net radiation during daylight (W/m^2)
+                'LE_daylight' : Latent heat flux during daylight (W/m^2)
+                'ET_daylight_kg' : Daylight ET in kg/m^2
     """
     results = {}
 
@@ -308,26 +315,26 @@ def PTJPL(
     # --- Soil evaporation ---
 
     # Calculate net radiation to soil from LAI
-    Rn_soil = calculate_soil_net_radiation(Rn_Wm2, LAI)
-    results["Rn_soil"] = Rn_soil
+    Rn_soil_Wm2 = calculate_soil_net_radiation(Rn_Wm2, LAI)
+    results["Rn_soil_Wm2"] = Rn_soil_Wm2
 
     # Calculate soil evaporation (LE_soil)
-    LE_soil = calculate_soil_latent_heat_flux(Rn_soil, G_Wm2, epsilon, fwet, fSM, PT_alpha)
-    results["LE_soil"] = LE_soil
+    LE_soil_Wm2 = calculate_soil_latent_heat_flux(Rn_soil_Wm2, G_Wm2, epsilon, fwet, fSM, PT_alpha)
+    results["LE_soil_Wm2"] = LE_soil_Wm2
 
     # --- Canopy transpiration ---
 
     # Net radiation to canopy is total minus soil
-    Rn_canopy = Rn_Wm2 - Rn_soil
-    results["Rn_canopy"] = Rn_canopy
+    Rn_canopy_Wm2 = Rn_Wm2 - Rn_soil_Wm2
+    results["Rn_canopy_Wm2"] = Rn_canopy_Wm2
 
     # Calculate potential evapotranspiration (PET)
-    PET = PT_alpha * epsilon * (Rn_Wm2 - G_Wm2)
-    results["PET"] = PET
+    PET_Wm2 = PT_alpha * epsilon * (Rn_Wm2 - G_Wm2)
+    results["PET_Wm2"] = PET_Wm2
 
     # Calculate canopy transpiration (LE_canopy)
-    LE_canopy = calculate_canopy_latent_heat_flux(
-        Rn_canopy=Rn_canopy,
+    LE_canopy_Wm2 = calculate_canopy_latent_heat_flux(
+        Rn_canopy=Rn_canopy_Wm2,
         epsilon=epsilon,
         fwet=fwet,
         fg=fg,
@@ -335,26 +342,51 @@ def PTJPL(
         fM=fM,
         PT_alpha=PT_alpha
     )
-    results["LE_canopy"] = LE_canopy
+    results["LE_canopy_Wm2"] = LE_canopy_Wm2
 
     # --- Interception evaporation ---
 
     # Calculate interception evaporation (LE_interception)
-    LE_interception = calculate_interception(
-        Rn_canopy=Rn_canopy,
+    LE_interception_Wm2 = calculate_interception(
+        Rn_canopy=Rn_canopy_Wm2,
         epsilon=epsilon,
         fwet=fwet,
         PT_alpha=PT_alpha
     )
-    results["LE_interception"] = LE_interception
+    results["LE_interception_Wm2"] = LE_interception_Wm2
 
     # --- Combined evapotranspiration ---
 
     # Total latent heat flux (LE) is sum of soil, canopy, and interception
-    LE = LE_soil + LE_canopy + LE_interception
+    LE_Wm2 = LE_soil_Wm2 + LE_canopy_Wm2 + LE_interception_Wm2
 
     # Constrain LE between 0 and PET
-    LE = np.clip(LE, 0, PET)
-    results["LE"] = LE
+    LE_Wm2 = np.clip(LE_Wm2, 0, PET_Wm2)
+    results["LE_Wm2"] = LE_Wm2
+
+    # --- Daylight upscaling ---
+    if upscale_to_daylight and time_UTC is not None:
+        # Calculate daylight net radiation
+        Rn_daylight_Wm2 = daylight_Rn_integration_verma(
+            Rn_Wm2=Rn_Wm2,
+            time_UTC=time_UTC,
+            geometry=geometry
+        )
+        results["Rn_daylight_Wm2"] = Rn_daylight_Wm2
+        # Calculate evaporative fraction
+        EF = np.where((LE_Wm2 == 0) | ((Rn_Wm2 - G_Wm2) == 0), 0, LE_Wm2 / (Rn_Wm2 - G_Wm2))
+        results["EF"] = EF
+        # Latent heat flux during daylight
+        LE_daylight_Wm2 = EF * Rn_daylight_Wm2
+        results["LE_daylight_Wm2"] = LE_daylight_Wm2
+        # Calculate daylight hours
+        if day_of_year is not None:
+            daylight_hours = calculate_daylight(day_of_year=day_of_year, time_UTC=time_UTC, geometry=geometry)
+        else:
+            daylight_hours = calculate_daylight(time_UTC=time_UTC, geometry=geometry)
+        daylight_seconds = daylight_hours * 3600.0
+        LAMBDA_JKG_WATER_20C = 2450000.0
+        ET_daylight_kg = np.clip(LE_daylight_Wm2 * daylight_seconds / LAMBDA_JKG_WATER_20C, 0.0, None)
+        results["ET_daylight_kg"] = ET_daylight_kg
 
     return results
