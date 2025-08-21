@@ -20,6 +20,7 @@ dependencies = [
     "colored-logging",
     "daylight-evapotranspiration>=1.2.1",
     "GEOS5FP>=1.2.2",
+    "meteorology-conversion",
     "numpy",
     "pandas",
     "rasters>=1.7.1",
