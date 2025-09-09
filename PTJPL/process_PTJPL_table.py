@@ -62,7 +62,7 @@ def process_PTJPL_table(
 
     RH = np.array(input_df.RH).astype(np.float64)  # Relative humidity
     Rn = np.array(input_df.Rn).astype(np.float64)  # Net radiation
-    Topt = np.array(input_df.Topt).astype(np.float64)  # Optimum temperature
+    Topt_C = np.array(input_df.Topt_C).astype(np.float64)  # Optimum temperature
     fAPARmax = np.array(input_df.fAPARmax).astype(np.float64)  # Max fAPAR
 
     # Mask fAPARmax values of 0 as NaN (invalid)
@@ -87,7 +87,7 @@ def process_PTJPL_table(
         Ta_C=Ta_C,
         RH=RH,
         Rn_Wm2=Rn,
-        Topt_C=Topt,
+        Topt_C=Topt_C,
         fAPARmax=fAPARmax,
         G_Wm2=G,
         RH_threshold=RH_threshold,

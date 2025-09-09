@@ -88,7 +88,7 @@ def PTJPL(
     PT_alpha: float = PT_ALPHA,
     minimum_Topt: float = MINIMUM_TOPT,
     RH_threshold: float = RH_THRESHOLD,
-    min_FWET: float = MIN_FWET,
+    min_fwet: float = MIN_FWET,
     floor_Topt: bool = FLOOR_TOPT,
     upscale_to_daylight: bool = False,
     day_of_year: np.ndarray = None) -> Dict[str, np.ndarray]:
@@ -242,6 +242,8 @@ def PTJPL(
 
     if G_Wm2 is None:
         raise ValueError("soil heat flux (G) not given")
+    
+    results["G_Wm2"] = G_Wm2    
 
     # --- Meteorological calculations ---
 
@@ -261,7 +263,7 @@ def PTJPL(
     fwet = calculate_relative_surface_wetness(
         RH=RH,
         RH_threshold=RH_threshold,
-        min_fwet=min_FWET
+        min_fwet=min_fwet
     )
 
     # --- Vegetation calculations ---
