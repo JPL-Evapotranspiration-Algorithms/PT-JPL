@@ -226,7 +226,7 @@ def PTJPL(
             GEOS5FP_connection=GEOS5FP_connection
         )
 
-        Rn_Wm2 = Rn_results["Rn"]
+        Rn_Wm2 = Rn_results["Rn_Wm2"]
 
     if Rn_Wm2 is None:
         raise ValueError("net radiation (Rn) not given")
