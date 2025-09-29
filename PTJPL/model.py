@@ -214,7 +214,7 @@ def PTJPL(
 
         # Calculate net radiation using Verma et al. method
         Rn_results = verma_net_radiation(
-            SWin=SWin_Wm2,
+            SWin_Wm2=SWin_Wm2,
             albedo=albedo,
             ST_C=ST_C,
             emissivity=emissivity,
