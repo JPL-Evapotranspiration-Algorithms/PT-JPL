@@ -49,3 +49,4 @@ from .ECOv002_static_tower_PTJPL_inputs import load_ECOv002_static_tower_PTJPL_i
 from .ECOv002_calval_PTJPL_inputs import load_ECOv002_calval_PTJPL_inputs
 
 from .verify import verify
+from .generate_static_PTJPL_input_dataset import generate_static_PTJPL_input_dataset
