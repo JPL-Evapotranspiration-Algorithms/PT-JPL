@@ -1,7 +1,8 @@
 import os
 import geopandas as gpd
 import rasters as rt
-from PTJPL import load_Topt, load_fAPARmax
+from .Topt import load_Topt
+from .fAPARmax import load_fAPARmax
 from ECOv002_calval_tables import load_combined_eco_flux_ec_filtered, load_metadata_ebc_filt
 
 def generate_static_PTJPL_input_dataset(output_file_path=None):

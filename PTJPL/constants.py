@@ -1,3 +1,5 @@
+from priestley_taylor import PT_ALPHA
+
 # Constants used in the PT-JPL model and related calculations.
 #
 # This module defines key physical and empirical constants for the Priestley-Taylor Jet Propulsion Laboratory (PT-JPL) evapotranspiration model.
