@@ -50,13 +50,21 @@ The PT-JPL model builds upon the foundational Priestley-Taylor equation but exte
 
 The PT-JPL model partitions total evapotranspiration into three components:
 
-**LE_total = LE_soil + LE_canopy + LE_interception**
+<div align="center">
+
+**LE<sub>total</sub> = LE<sub>soil</sub> + LE<sub>canopy</sub> + LE<sub>interception</sub>**
+
+</div>
 
 Where each component is calculated using modified Priestley-Taylor equations with biophysical constraints:
 
 #### 1. Soil Evaporation
 
-**LE_soil = α × ε × (Rn_soil - G) × f_wet × f_SM**
+<div align="center">
+
+**LE<sub>soil</sub> = α × ε × (Rn<sub>soil</sub> - G) × f<sub>wet</sub> × f<sub>SM</sub>**
+
+</div>
 
 Where:
 - **LE_soil** = Soil evaporation [W m⁻²]
@@ -69,7 +77,11 @@ Where:
 
 #### 2. Canopy Transpiration
 
-**LE_canopy = α × ε × Rn_canopy × (1 - f_wet) × f_g × f_T × f_M**
+<div align="center">
+
+**LE<sub>canopy</sub> = α × ε × Rn<sub>canopy</sub> × (1 - f<sub>wet</sub>) × f<sub>g</sub> × f<sub>T</sub> × f<sub>M</sub>**
+
+</div>
 
 Where:
 - **LE_canopy** = Canopy transpiration [W m⁻²]
@@ -80,7 +92,11 @@ Where:
 
 #### 3. Interception Evaporation
 
-**LE_interception = α × ε × Rn_canopy × f_wet**
+<div align="center">
+
+**LE<sub>interception</sub> = α × ε × Rn<sub>canopy</sub> × f<sub>wet</sub>**
+
+</div>
 
 Where:
 - **LE_interception** = Interception evaporation from wet canopy surfaces [W m⁻²]
@@ -91,18 +107,35 @@ Where:
 
 Following classical Priestley-Taylor methodology:
 
+<div align="center">
+
 **ε = Δ / (Δ + γ)**
+
+</div>
 
 Where:
 - **Δ** = Slope of saturation vapor pressure curve [Pa °C⁻¹]
 - **γ** = Psychrometric constant (66.2 Pa °C⁻¹)
 
-**Δ = 4098 × [0.6108 × exp(17.27 × Ta / (237.3 + Ta))] / (Ta + 237.3)²**
+<div align="center">
+
+**Δ = [4098 × (0.6108 × exp(17.27 × T<sub>a</sub> / (237.3 + T<sub>a</sub>)))] / (T<sub>a</sub> + 237.3)<sup>2</sup>**
+
+</div>
 
 #### Net Radiation Partitioning
 
-**Rn_soil = Rn × exp(-k × LAI)**
-**Rn_canopy = Rn - Rn_soil**
+<div align="center">
+
+**Rn<sub>soil</sub> = Rn × exp(-k × LAI)**
+
+</div>
+
+<div align="center">
+
+**Rn<sub>canopy</sub> = Rn - Rn<sub>soil</sub>**
+
+</div>
 
 Where:
 - **k** = Light extinction coefficient (≈0.5) [dimensionless]
@@ -110,8 +143,17 @@ Where:
 
 #### Surface Wetness Function (f_wet)
 
-**f_wet = RH⁴** (for RH > RH_threshold, default 0.7)
-**f_wet = min_f_wet** (for RH ≤ RH_threshold, default 0.0001)
+<div align="center">
+
+**f<sub>wet</sub> = RH<sup>4</sup>** &nbsp;&nbsp;&nbsp;&nbsp; (for RH > RH<sub>threshold</sub>, default 0.7)
+
+</div>
+
+<div align="center">
+
+**f<sub>wet</sub> = min<sub>f_wet</sub>** &nbsp;&nbsp;&nbsp;&nbsp; (for RH ≤ RH<sub>threshold</sub>, default 0.0001)
+
+</div>
 
 Where:
 - **RH** = Relative humidity [0-1]
@@ -120,20 +162,43 @@ Where:
 
 #### Green Canopy Fraction (f_g)
 
-**f_g = min(fAPAR / fIPAR, 1.0)**
+<div align="center">
+
+**f<sub>g</sub> = min(fAPAR / fIPAR, 1.0)**
+
+</div>
 
 Where:
 - **fAPAR** = Fraction of absorbed photosynthetically active radiation
 - **fIPAR** = Fraction of intercepted photosynthetically active radiation
 
 Vegetation indices are converted as:
-**SAVI = 1.5 × (NDVI + 0.5) / (NDVI + 0.5 + 1.0)**
-**fAPAR = 1.3632 × SAVI - 0.048** (Fisher et al., 2008)
-**fIPAR = min(-0.1336 × NDVI² + 1.4653 × NDVI + 0.1032, 0.95)**
+
+<div align="center">
+
+**SAVI = [1.5 × (NDVI + 0.5)] / (NDVI + 0.5 + 1.0)**
+
+</div>
+
+<div align="center">
+
+**fAPAR = 1.3632 × SAVI - 0.048** &nbsp;&nbsp;&nbsp;&nbsp; (Fisher et al., 2008)
+
+</div>
+
+<div align="center">
+
+**fIPAR = min(-0.1336 × NDVI<sup>2</sup> + 1.4653 × NDVI + 0.1032, 0.95)**
+
+</div>
 
 #### Plant Temperature Constraint (f_T)
 
-**f_T = exp(-((Ta - Topt) / Topt)²)**
+<div align="center">
+
+**f<sub>T</sub> = exp(-((T<sub>a</sub> - T<sub>opt</sub>) / T<sub>opt</sub>)<sup>2</sup>)**
+
+</div>
 
 Where:
 - **Ta** = Air temperature [°C]
@@ -141,14 +206,22 @@ Where:
 
 #### Plant Moisture Constraint (f_M)
 
-**f_M = fAPAR / fAPARmax**
+<div align="center">
+
+**f<sub>M</sub> = fAPAR / fAPAR<sub>max</sub>**
+
+</div>
 
 Where:
 - **fAPARmax** = Maximum climatological fAPAR for each location
 
 #### Soil Moisture Constraint (f_SM)
 
-**f_SM = min(RH / (RH + VPD/β), 1.0)**
+<div align="center">
+
+**f<sub>SM</sub> = min(RH / (RH + VPD/β), 1.0)**
+
+</div>
 
 Where:
 - **VPD** = Vapor pressure deficit [Pa]
