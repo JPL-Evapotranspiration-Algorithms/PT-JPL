@@ -23,7 +23,7 @@ dependencies = [
     "meteorology-conversion",
     "numpy",
     "pandas",
-    "priestley-taylor",
+    "priestley-taylor>=1.1.3",
     "rasters>=1.7.1",
     "SEBAL-soil-heat-flux",
     "solar-apparent-time",
