@@ -13,7 +13,7 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 
 test:
-	env PYTHONPATH=$$(pwd) pytest
+	env PYTHONPATH=$$(pwd) $$(which python) -m pytest
 
 build:
 	python -m build

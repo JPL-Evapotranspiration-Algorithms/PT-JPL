@@ -41,6 +41,7 @@ from daylight_evapotranspiration import daylight_ET_from_instantaneous_LE
 from sun_angles import calculate_daylight
 from SEBAL_soil_heat_flux import calculate_SEBAL_soil_heat_flux
 
+from priestley_taylor import PT_ALPHA
 from priestley_taylor import GAMMA_PA
 from priestley_taylor import delta_Pa_from_Ta_C
 
