@@ -47,9 +47,9 @@ from priestley_taylor import delta_Pa_from_Ta_C
 
 from .constants import *
 
-from .vegetation_conversion import SAVI_from_NDVI
-from .vegetation_conversion import fAPAR_from_SAVI
-from .vegetation_conversion import fIPAR_from_NDVI
+from vegetation_conversion import SAVI_from_NDVI
+from vegetation_conversion import fAPAR_from_SAVI
+from vegetation_conversion import fIPAR_from_NDVI
 
 from .partitioning import RH_THRESHOLD, MIN_FWET
 from .partitioning import calculate_relative_surface_wetness
